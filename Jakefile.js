@@ -24,11 +24,11 @@ task('default',['build', 'docs'],function(){
  */
 task('build', ['clean'], function(){
 	sys.puts('linting');
-	exec('jslint nsjs.js', function(error, stdout, stderr){
+	exec('jslint src/nsjs.js', function(error, stdout, stderr){
 		sys.puts('lint results: ' + stdout);
 	});
 	exec('mkdir bin');
-	exec('cp nsjs.js bin');
+	exec('cp src/nsjs.js bin');
 	// add closure compiler support
 });
 /**
@@ -48,5 +48,5 @@ task('clean', [], function(){
 task('docs', [], function(){
 	sys.puts('writing docs');
 	exec('mkdir docs');
-	exec('dox --title "' + title + '" nsjs.js > docs/index.html');
+	exec('dox --title "' + title + '" src/nsjs.js > docs/index.html');
 });
