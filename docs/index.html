@@ -116,7 +116,7 @@ code .this { color: #19469D; }</style>
  </p>
 </td>
 <td class="code">
-<pre><code>(<span class="keyword">function</span>(<span class="variable">window</span>){</code></pre>
+<pre><code>(<span class="keyword">function</span>(<span class="variable">exports</span>){</code></pre>
 </td>
 </tr>
 <tr class="code">
@@ -127,11 +127,11 @@ code .this { color: #19469D; }</style>
 <pre><code><span class="keyword">function</span> <span class="class">Namespace</span>(<span class="variable">name</span>, <span class="variable">parent</span>){
 		<span class="comment">// just the basics for now</span>
 		<span class="this">this</span>.<span class="variable">__name</span> = <span class="variable">name</span>;
-		<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span> || <span class="variable">window</span>;
+		<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span> || <span class="variable">global</span>;
 		<span class="this">this</span>.<span class="variable">__type</span> = <span class="string">'Namespace'</span>;
 		<span class="comment">// add some method stubs</span>
 		<span class="this">this</span>.<span class="variable">__ns</span> = <span class="keyword">function</span>(<span class="variable">name</span>, <span class="variable">last</span>){
-			<span class="variable">ns</span>(<span class="variable">name</span>);
+			<span class="variable">ns</span>.<span class="variable">call</span>(<span class="this">this</span>,<span class="variable">name</span>);
 			<span class="keyword">if</span>(<span class="variable">last</span>){
 				<span class="this">this</span>.<span class="variable">__ns</span> = <span class="keyword">function</span>(){};
 			}
@@ -152,12 +152,13 @@ code .this { color: #19469D; }</style>
 		<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span>;
 		<span class="comment">// helpers and module methods</span>
 		<span class="this">this</span>.<span class="variable">__ns</span> = <span class="keyword">function</span>(<span class="variable">name</span>, <span class="variable">last</span>){
-			<span class="variable">ns</span>(<span class="variable">name</span>);
+			<span class="variable">ns</span>.<span class="variable">call</span>(<span class="this">this</span>, <span class="variable">name</span>);
 			<span class="keyword">if</span>(<span class="variable">last</span>){
 				<span class="this">this</span>.<span class="variable">__ns</span> = <span class="keyword">function</span>(){};
 			}
 		};
 		<span class="this">this</span>.<span class="variable">__load</span> = <span class="variable">load</span>;
+		<span class="keyword">return</span> <span class="this">this</span>;
 	}</code></pre>
 </td>
 </tr>
@@ -169,6 +170,7 @@ code .this { color: #19469D; }</style>
 </td>
 <td class="code">
 <pre><code><span class="keyword">function</span> <span class="variable">ns</span>(<span class="variable">name</span>, <span class="variable">last</span>){
+		<span class="variable">console</span>.<span class="variable">log</span>(<span class="this">this</span>);
 		<span class="keyword">if</span>(<span class="this">this</span>[<span class="variable">name</span>] !== <span class="variable">undefined</span>){
 			<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Namespace already defined.'</span>);
 		}
@@ -189,11 +191,16 @@ code .this { color: #19469D; }</style>
 </td>
 <td class="code">
 <pre><code><span class="keyword">function</span> <span class="variable">load</span>(<span class="variable">name</span>, <span class="variable">module</span>, <span class="variable">last</span>){
+		<span class="keyword">var</span> <span class="variable">type</span> = <span class="variable">detectType</span>(<span class="variable">module</span>);
 		<span class="keyword">if</span>(<span class="this">this</span>[<span class="variable">name</span>] !== <span class="variable">undefined</span>){
 			<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Module already defined.'</span>);
 		}
-		<span class="class">Module</span>.<span class="variable">prototype</span> = <span class="class">Object</span>.<span class="variable">create</span>(<span class="variable">module</span>);
-		<span class="this">this</span>[<span class="variable">name</span>] = <span class="keyword">new</span> <span class="class">Module</span>(<span class="variable">name</span>, <span class="variable">_super</span>, <span class="variable">module</span>);
+		<span class="keyword">if</span>(<span class="variable">type</span> === <span class="string">'Property'</span>){
+			<span class="this">this</span>[<span class="variable">name</span>] = <span class="variable">module</span>;
+		}<span class="keyword">else</span>{
+			<span class="class">Module</span>.<span class="variable">prototype</span> = <span class="class">Object</span>.<span class="variable">create</span>(<span class="variable">module</span>);
+			<span class="this">this</span>[<span class="variable">name</span>] = (<span class="keyword">typeof</span> <span class="variable">module</span> !== <span class="string">'function'</span>)?<span class="keyword">new</span> <span class="class">Module</span>(<span class="variable">name</span>, <span class="this">this</span>, <span class="variable">module</span>):<span class="class">Module</span>.<span class="variable">call</span>(<span class="variable">module</span>, <span class="variable">name</span>, <span class="this">this</span>, <span class="variable">module</span>);			
+		}
 		<span class="keyword">if</span>(<span class="variable">last</span>){
 			<span class="this">this</span>.<span class="variable">__load</span> = <span class="keyword">function</span>(){
 				<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Load method already finalized. No more modules can be loaded in this namespace'</span>);
@@ -244,9 +251,13 @@ code .this { color: #19469D; }</style>
  </p>
 </td>
 <td class="code">
-<pre><code><span class="variable">window</span>.<span class="variable">__ns</span> = <span class="variable">ns</span>;
-	<span class="variable">window</span>.<span class="variable">__load</span> = <span class="variable">load</span>;
-})(<span class="this">this</span>);</code></pre>
+<pre><code><span class="class">Namespace</span>.<span class="variable">prototype</span> = {<span class="variable">__ns</span> : <span class="variable">ns</span>, <span class="variable">__load</span> : <span class="variable">load</span>};
+	<span class="class">Namespace</span>.<span class="variable">prototype</span>.<span class="variable">constructor</span> = <span class="class">Namespace</span>;
+	<span class="variable">exports</span>.<span class="class">Namespace</span> = <span class="class">Namespace</span>;
+	<span class="variable">exports</span>.<span class="class">Module</span> = <span class="class">Module</span>;
+	<span class="variable">exports</span>.<span class="variable">__ns</span> = <span class="variable">ns</span>;
+	<span class="variable">exports</span>.<span class="variable">__load</span> = <span class="variable">load</span>;
+})((<span class="keyword">typeof</span> <span class="variable">exports</span> !== <span class="variable">undefined</span>)? <span class="this">this</span>:<span class="variable">exports</span>);</code></pre>
 </td>
 </tr>	</body>
 </html></tbody></table>

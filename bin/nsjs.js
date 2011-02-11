@@ -4,18 +4,18 @@
  * The objective of this library is to create a standard and reusable way to ensure namespace architecture
  */
 
-(function(window){
+(function(exports){
 /**
  * @constructor Namespace
  */
 	function Namespace(name, parent){
 		// just the basics for now
 		this.__name = name;
-		this.__parent = parent || window;
+		this.__parent = parent || global;
 		this.__type = 'Namespace';
 		// add some method stubs
 		this.__ns = function(name, last){
-			ns(name);
+			ns.call(this,name);
 			if(last){
 				this.__ns = function(){};
 			}
@@ -32,12 +32,13 @@
 		this.__parent = parent;
 		// helpers and module methods
 		this.__ns = function(name, last){
-			ns(name);
+			ns.call(this, name);
 			if(last){
 				this.__ns = function(){};
 			}
 		};
 		this.__load = load;
+		return this;
 	}
 /**
  * @function ns
@@ -45,6 +46,7 @@
  * @param last {Boolean}
  */
 	function ns(name, last){
+		console.log(this);
 		if(this[name] !== undefined){
 			throw new Error('Namespace already defined.');
 		}
@@ -63,11 +65,16 @@
  * @param last {Boolean}
  */
 	function load(name, module, last){
+		var type = detectType(module);
 		if(this[name] !== undefined){
 			throw new Error('Module already defined.');
 		}
-		Module.prototype = Object.create(module);
-		this[name] = new Module(name, _super, module);
+		if(type === 'Property'){
+			this[name] = module;
+		}else{
+			Module.prototype = Object.create(module);
+			this[name] = (typeof module !== 'function')?new Module(name, this, module):Module.call(module, name, this, module);			
+		}
 		if(last){
 			this.__load = function(){
 				throw new Error('Load method already finalized. No more modules can be loaded in this namespace');
@@ -110,6 +117,10 @@
 /**
  * global accessors
  */
-	window.__ns = ns;
-	window.__load = load;
-})(this);
+	Namespace.prototype = {__ns : ns, __load : load};
+	Namespace.prototype.constructor = Namespace;
+	exports.Namespace = Namespace;
+	exports.Module = Module;
+	exports.__ns = ns;
+	exports.__load = load;
+})((typeof exports !== undefined)? this:exports);
