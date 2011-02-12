@@ -27,10 +27,13 @@ task('build', ['clean'], function(){
 	exec('jslint src/nsjs.js', function(error, stdout, stderr){
 		sys.puts('lint results: ' + stdout);
 	});
-	exec('mkdir bin');
-	exec('cp src/nsjs.js bin');
+	exec('mkdir bin', function(){
+		exec('java -jar tools/compiler.jar --js src/nsjs.js --js_output_file bin/nsjs.min.js', function(){
+			complete();
+		});	
+	});
 	// add closure compiler support
-});
+}, true);
 /**
  * clean
  */
