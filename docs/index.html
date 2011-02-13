@@ -211,45 +211,83 @@ watch out for chaining this as the context will become lost if you call this ins
 		<span class="variable">context</span>;
 	<span class="keyword">if</span>(<span class="this">this</span>[<span class="variable">name</span>] !== <span class="variable">undefined</span>){
 		<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Module already defined.'</span>);
+	}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function  defaultset</h2>
+
+<ul><li><p><strong>class</strong>: <em>load</em></p></li><li><p><strong>param</strong>: <em>value</em></p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">defaultset</span>(<span class="variable">value</span>){
+	<span class="variable">module</span> = <span class="variable">value</span>;
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function defaultget</h2>
+
+<ul><li><p><strong>class</strong>: <em>load</em></p></li><li><p><strong>return</strong>: <em>s</em></p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">defaultget</span>(){
+	<span class="keyword">var</span> <span class="variable">slice</span> = <span class="class">Array</span>.<span class="variable">prototype</span>.<span class="variable">slice</span>,
+		<span class="variable">res</span>;
+	<span class="keyword">if</span>(!<span class="variable">immutable</span>){
+		<span class="keyword">if</span>(<span class="variable">arguments</span>.<span class="variable">length</span> === <span class="number integer">1</span>){
+			<span class="variable">set</span>(<span class="variable">arguments</span>[<span class="number integer">0</span>]);
+		}			
 	}
-	<span class="keyword">function</span> <span class="variable">defaultset</span>(<span class="variable">value</span>){
-		<span class="variable">module</span> = <span class="variable">value</span>;
+	<span class="variable">res</span> = (<span class="keyword">typeof</span> <span class="variable">module</span> === <span class="string">'object'</span>)?
+			(<span class="variable">module</span> <span class="variable">instanceof</span> <span class="class">Array</span>)?
+					<span class="variable">slice</span>.<span class="variable">call</span>(<span class="variable">module</span>, <span class="number integer">0</span>): <span class="comment">// copy the array</span>
+						<span class="class">Object</span>.<span class="variable">clone</span>(<span class="variable">module</span>): <span class="comment">// copy the object</span>
+							<span class="variable">module</span>; <span class="comment">// return the primitive</span>
+	<span class="keyword">if</span>(<span class="keyword">typeof</span> <span class="variable">get</span> === <span class="string">'function'</span>){
+		<span class="keyword">return</span> <span class="variable">get</span>(<span class="variable">res</span>);
 	}
-	<span class="keyword">function</span> <span class="variable">defaultget</span>(){
-		<span class="keyword">var</span> <span class="variable">slice</span> = <span class="class">Array</span>.<span class="variable">prototype</span>.<span class="variable">slice</span>,
-			<span class="variable">res</span>;
-		<span class="keyword">if</span>(!<span class="variable">immutable</span>){
-			<span class="keyword">if</span>(<span class="variable">arguments</span>.<span class="variable">length</span> === <span class="number integer">1</span>){
-				<span class="variable">set</span>(<span class="variable">arguments</span>[<span class="number integer">0</span>]);
-			}			
-		}
-		<span class="variable">res</span> = (<span class="keyword">typeof</span> <span class="variable">module</span> === <span class="string">'object'</span>)?
-				(<span class="variable">module</span> <span class="variable">instanceof</span> <span class="class">Array</span>)?
-						<span class="variable">slice</span>.<span class="variable">call</span>(<span class="variable">module</span>, <span class="number integer">0</span>): <span class="comment">// copy the array</span>
-							<span class="class">Object</span>.<span class="variable">clone</span>(<span class="variable">module</span>): <span class="comment">// copy the object</span>
-								<span class="variable">module</span>; <span class="comment">// return the primitive</span>
-		<span class="keyword">if</span>(<span class="keyword">typeof</span> <span class="variable">get</span> === <span class="string">'function'</span>){
-			<span class="keyword">return</span> <span class="variable">get</span>(<span class="variable">res</span>);
-		}
-		<span class="keyword">return</span> <span class="variable">res</span>;
+	<span class="keyword">return</span> <span class="variable">res</span>;
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function changeSetter</h2>
+
+<ul><li><strong>class</strong>: <em>load</em></li></ul>
+
+<h2></h2>
+
+<ul><li><p><strong>param</strong>: <em>Function</em>  fn</p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">changeSetter</span>(<span class="variable">fn</span>){
+	<span class="keyword">if</span>(<span class="keyword">typeof</span> <span class="variable">fn</span> === <span class="string">'function'</span>){
+		<span class="variable">set</span> = <span class="keyword">function</span>(<span class="variable">value</span>){
+			<span class="keyword">var</span> <span class="variable">res</span> = <span class="variable">fn</span>(<span class="variable">value</span>);
+			<span class="variable">defaultset</span>(<span class="variable">res</span>);
+		};
 	}
-	<span class="keyword">function</span> <span class="variable">changeSetter</span>(<span class="variable">fn</span>){
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function changeGetter</h2>
+
+<ul><li><strong>class</strong>: <em>load</em></li></ul>
+
+<h2></h2>
+
+<ul><li><p><strong>param</strong>: <em>Function</em>  fn</p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">changeGetter</span>(<span class="variable">fn</span>){
 		<span class="keyword">if</span>(<span class="keyword">typeof</span> <span class="variable">fn</span> === <span class="string">'function'</span>){
-			<span class="variable">set</span> = <span class="keyword">function</span>(<span class="variable">value</span>){
-				<span class="keyword">var</span> <span class="variable">res</span> = <span class="variable">fn</span>(<span class="variable">value</span>);
-				<span class="variable">defaultset</span>(<span class="variable">res</span>);
-			};
-		}
-	}
-	<span class="keyword">function</span> <span class="variable">changeGetter</span>(<span class="variable">fn</span>){
-		<span class="keyword">if</span>(<span class="keyword">typeof</span> <span class="variable">fn</span> === <span class="string">'function'</span>){
-			<span class="variable">get</span> = <span class="keyword">function</span>(<span class="variable">value</span>){
-				<span class="keyword">var</span> <span class="variable">res</span>;
-				<span class="keyword">if</span>(<span class="variable">value</span> === <span class="variable">undefined</span>){
-					<span class="keyword">return</span> <span class="variable">fn</span>(<span class="variable">res</span>);
-				}
-				<span class="keyword">return</span> <span class="variable">value</span>;
-			};
+			<span class="variable">get</span> = <span class="variable">fn</span>;
 		}
 	}
 	<span class="variable">set</span> = <span class="variable">defaultset</span>;
@@ -328,6 +366,269 @@ watch out for chaining this as the context will become lost if you call this ins
 <span class="variable">exports</span>.<span class="variable">load</span> = <span class="variable">load</span>;
 <span class="variable">exports</span>.<span class="variable">lock</span> = <span class="variable">lock</span>;
 })((<span class="keyword">typeof</span> <span class="variable">exports</span> !== <span class="variable">undefined</span>)? <span class="this">this</span>:<span class="variable">exports</span>);</code></pre>
+</td>
+</tr><tr class="filename"><td><h2 id="tests/test.js"><a href="#">test</a></h2></td><td>tests/test.js</td></tr><tr class="code">
+<td class="docs">
+<p>nsjs tests</p>
+
+<ul><li><p><strong>param</strong>: <em>exports</em></p></li></ul>
+</td>
+<td class="code">
+<pre><code>(<span class="keyword">function</span>(<span class="variable">exports</span>){
+<span class="keyword">var</span> <span class="variable">assert</span> = <span class="variable">require</span>(<span class="string">'assert'</span>),
+	<span class="variable">tests</span> = [];</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function setup</h2>
+
+<ul><li><p><strong>param</strong>: <em>nsjs</em></p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">setup</span>(<span class="variable">nsjs</span>){
+	<span class="variable">nsjs</span>.<span class="variable">ns</span>(<span class="string">'namespace'</span>); <span class="comment">// namespace</span>
+	<span class="variable">nsjs</span>.<span class="variable">ns</span>(<span class="string">'deep.namespace'</span>); <span class="comment">// deep namespace</span>
+	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'singleton'</span>, {<span class="variable">a</span> : <span class="variable">true</span>}); <span class="comment">// singleton</span>
+	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'method'</span>, <span class="keyword">function</span>(<span class="variable">x</span>){<span class="keyword">return</span> <span class="variable">x</span> * <span class="variable">x</span>;}); <span class="comment">// method</span>
+	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'Constructor'</span>, <span class="keyword">function</span> <span class="class">Test</span>(){<span class="this">this</span>.<span class="variable">y</span> = <span class="variable">true</span>;}); <span class="comment">// constructor</span>
+	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'number'</span>, <span class="number integer">1</span>); <span class="comment">// numeric property</span>
+	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'string'</span>, <span class="string">'Hello World'</span>); <span class="comment">// string property</span>
+	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'boolean'</span>, <span class="variable">true</span>); <span class="comment">// boolean property</span>
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function runTests</h2>
+
+<ul><li><p><strong>param</strong>: <em>context</em></p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">runTests</span>(<span class="variable">context</span>){
+	<span class="variable">setup</span>(<span class="variable">context</span>);
+	<span class="keyword">var</span> <span class="variable">i</span> = <span class="number integer">0</span>,
+		<span class="variable">test</span>;
+	<span class="keyword">for</span>(; <span class="variable">test</span> = <span class="variable">tests</span>[<span class="variable">i</span>++];){
+		<span class="keyword">try</span>{
+			<span class="variable">test</span>.<span class="variable">fn</span>(<span class="variable">context</span>);
+			<span class="variable">console</span>.<span class="variable">log</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Passed'</span>);
+		}<span class="keyword">catch</span>(<span class="variable">e</span>){
+			<span class="keyword">var</span> <span class="variable">j</span> = <span class="number integer">0</span>,
+				<span class="variable">err</span>;
+			<span class="keyword">if</span>(<span class="variable">e</span> <span class="variable">instanceof</span> <span class="class">Array</span>){
+				<span class="keyword">for</span>(;<span class="variable">err</span> = <span class="variable">e</span>[<span class="variable">j</span>++];){
+					<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Error :: '</span> + <span class="variable">err</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">err</span>.<span class="variable">message</span>);
+				}
+				<span class="keyword">continue</span>;
+			}
+			<span class="keyword">if</span>(<span class="variable">e</span>.<span class="variable">name</span> === <span class="string">'AssertionError'</span>){
+				<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Failed :: '</span> + <span class="variable">e</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">e</span>.<span class="variable">message</span>);
+				<span class="keyword">continue</span>;
+			}
+			<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Error :: '</span> + <span class="variable">e</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">e</span>.<span class="variable">message</span>);
+		}
+	}
+	<span class="variable">tearDown</span>(<span class="variable">context</span>);
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function addTest</h2>
+
+<ul><li><p><strong>param</strong>: <em>fn</em></p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">addTest</span>(<span class="variable">fn</span>){
+	<span class="variable">tests</span>.<span class="variable">push</span>({<span class="variable">name</span> : <span class="variable">fn</span>.<span class="variable">name</span>, <span class="variable">fn</span>: <span class="variable">fn</span>});
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testNamespaceCreate</h2>
+
+<ul><li><p><strong>param</strong>: <em>ns</em></p></li></ul>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testNamespaceCreate</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">hasOwnProperty</span>(<span class="string">'namespace'</span>), <span class="string">'The test namespace was not created!'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">namespace</span> <span class="variable">instanceof</span> <span class="variable">ns</span>.<span class="class">Namespace</span>, <span class="variable">t</span>  <span class="variable">of</span> <span class="variable">the</span> <span class="variable">appropriate</span> <span class="variable">type</span>!');
+}
+<span class="variable">addTest</span>(<span class="variable">testNamespaceCreate</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testNamespaceDuplicationError</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testNamespaceDuplicationError</span>(<span class="variable">ns</span>){
+	<span class="keyword">try</span>{
+		<span class="variable">ns</span>.<span class="variable">ns</span>(<span class="string">'namespace'</span>);
+	}<span class="keyword">catch</span>(<span class="variable">e</span>){
+		<span class="keyword">if</span>(<span class="variable">e</span> <span class="variable">instanceof</span> <span class="class">Array</span>){
+			<span class="keyword">var</span> <span class="variable">i</span> = <span class="number integer">0</span>,
+				<span class="variable">err</span>;
+			<span class="keyword">for</span>(;<span class="variable">err</span> = <span class="variable">e</span>[<span class="variable">i</span>++];){
+				<span class="variable">assert</span>.<span class="variable">throws</span>(<span class="keyword">function</span>(){<span class="keyword">throw</span> <span class="variable">err</span>;}, <span class="class">Error</span>, <span class="string">'did not throw Namespace exists error.'</span>);
+			}
+		}
+	}
+}
+<span class="variable">addTest</span>(<span class="variable">testNamespaceDuplicationError</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testNamespaceType</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testNamespaceType</span>(<span class="variable">ns</span>){	
+	<span class="variable">assert</span>.<span class="variable">strictEqual</span>(<span class="variable">ns</span>.<span class="variable">namespace</span>.<span class="variable">__type</span>, <span class="string">'Namespace'</span>, <span class="string">'Incorrect __type property set.'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testNamespaceType</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testNamespaceDeep</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testNamespaceDeep</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">deep</span>.<span class="variable">hasOwnProperty</span>(<span class="string">'namespace'</span>), <span class="string">'The deep.namespace was not created!'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testNamespaceDeep</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testNamespaceDeepDuplicationError</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testNamespaceDeepDuplicationError</span>(<span class="variable">ns</span>){
+	<span class="keyword">try</span>{
+		<span class="variable">ns</span>.<span class="variable">ns</span>(<span class="string">'deep.namespace.test'</span>);
+	}<span class="keyword">catch</span>(<span class="variable">e</span>){
+		<span class="keyword">if</span>(<span class="variable">e</span> <span class="variable">instanceof</span> <span class="class">Array</span>){
+			<span class="keyword">var</span> <span class="variable">i</span> = <span class="number integer">0</span>,
+				<span class="variable">err</span>;
+			<span class="keyword">for</span>(;<span class="variable">err</span> = <span class="variable">e</span>[<span class="variable">i</span>++];){
+				<span class="variable">assert</span>.<span class="variable">throws</span>(<span class="keyword">function</span>(){<span class="keyword">throw</span> <span class="variable">err</span>;}, <span class="class">Error</span>, <span class="string">'did not throw Namespace exists error.'</span>);
+			}
+		}
+	}
+}
+<span class="variable">addTest</span>(<span class="variable">testNamespaceDeepDuplicationError</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testModuleLoaded</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testModuleLoaded</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">hasOwnProperty</span>(<span class="string">'singleton'</span>), <span class="string">'The singleton module was not loaded!'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">__type</span> === <span class="string">'Singleton'</span>, <span class="string">'The singleton module does not have the appropriate __type property'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testModuleLoaded</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testMethodLoaded</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testMethodLoaded</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">hasOwnProperty</span>(<span class="string">'method'</span>), <span class="string">'The f method was not loaded!'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">method</span>.<span class="variable">__type</span> === <span class="string">'Method'</span>, <span class="string">'The method has the wrong __type property.'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testMethodLoaded</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testNumberPropertyLoaded</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testNumberPropertyLoaded</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">hasOwnProperty</span>(<span class="string">'number'</span>), <span class="string">'The number property was not loaded!'</span>);
+	<span class="variable">assert</span>.<span class="variable">strictEqual</span>(<span class="keyword">typeof</span> <span class="variable">ns</span>.<span class="variable">number</span>(), <span class="string">'number'</span>, <span class="string">'Value of ns.number was not numeric'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testNumberPropertyLoaded</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testStringPropertyLoaded</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testStringPropertyLoaded</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">hasOwnProperty</span>(<span class="string">'string'</span>), <span class="string">'The string property was not loaded!'</span>);
+	<span class="variable">assert</span>.<span class="variable">strictEqual</span>(<span class="keyword">typeof</span> <span class="variable">ns</span>.<span class="variable">string</span>(), <span class="string">'string'</span>, <span class="string">'Value of ns.string was not a string'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testStringPropertyLoaded</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testBooleanPropertyLoaded</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testBooleanPropertyLoaded</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">boolean</span>() === <span class="variable">true</span>, <span class="string">'Value of boolean property was not true'</span>);
+	<span class="variable">ns</span>.<span class="variable">boolean</span>(<span class="variable">false</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">boolean</span>() === <span class="variable">false</span>, <span class="string">'Value of boolean did not change to false'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testBooleanPropertyLoaded</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testModifySetter</h2>
+
+<p>XXX not implemented
+ </p>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testModifySetter</span>(<span class="variable">ns</span>){
+	
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testConstructor</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testConstructor</span>(<span class="variable">ns</span>){
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="keyword">typeof</span> <span class="variable">ns</span>.<span class="class">Constructor</span> === <span class="string">'function'</span>, <span class="string">'Constructor module is not a funtion.'</span>);
+	<span class="keyword">var</span> <span class="variable">testObj</span> = <span class="keyword">new</span> <span class="variable">ns</span>.<span class="class">Constructor</span>();
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">testObj</span>.<span class="variable">y</span>, <span class="string">'The object create from the Constructor module did not contain the right properties.'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">testObj</span> <span class="variable">instanceof</span> <span class="variable">ns</span>.<span class="class">Constructor</span>, <span class="string">'Object create from the Constructor is not an instance of Constructor'</span>);
+	<span class="variable">assert</span>.<span class="variable">strictEqual</span>(<span class="variable">ns</span>.<span class="class">Constructor</span>.<span class="variable">__type</span>, <span class="string">'Constructor'</span>, <span class="string">'__type property was not set properly.'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testConstructor</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function tearDown</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">tearDown</span>(<span class="variable">nsjs</span>){
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="variable">namespace</span>;
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="variable">deep</span>;
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="variable">singleton</span>;
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="variable">method</span>;
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="class">Constructor</span>;
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="variable">number</span>;
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="variable">string</span>;
+	<span class="keyword">delete</span> <span class="variable">nsjs</span>.<span class="variable">boolean</span>;
+}
+<span class="variable">exports</span>.<span class="variable">runTests</span> = <span class="variable">runTests</span>;
+})((<span class="keyword">typeof</span> <span class="variable">exports</span> !== <span class="variable">undefined</span>)?<span class="variable">exports</span>:<span class="variable">window</span>);</code></pre>
 </td>
 </tr>	</body>
 </html></tbody></table>

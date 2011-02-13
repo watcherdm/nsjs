@@ -83,44 +83,62 @@ function load(name, module, immutable){
 	if(this[name] !== undefined){
 		throw new Error('Module already defined.');
 	}
-	function defaultset(value){
-		module = value;
+/**
+ * Function : defaultset
+ * 
+ * @class load
+ * @param value
+ */
+function defaultset(value){
+	module = value;
+}
+/**
+ * Function: defaultget
+ * 
+ * @class load
+ * @returns
+ */
+function defaultget(){
+	var slice = Array.prototype.slice,
+		res;
+	if(!immutable){
+		if(arguments.length === 1){
+			set(arguments[0]);
+		}			
 	}
-	function defaultget(){
-		var slice = Array.prototype.slice,
-			res;
-		if(!immutable){
-			if(arguments.length === 1){
-				set(arguments[0]);
-			}			
-		}
-		res = (typeof module === 'object')?
-				(module instanceof Array)?
-						slice.call(module, 0): // copy the array
-							Object.clone(module): // copy the object
-								module; // return the primitive
-		if(typeof get === 'function'){
-			return get(res);
-		}
-		return res;
+	res = (typeof module === 'object')?
+			(module instanceof Array)?
+					slice.call(module, 0): // copy the array
+						Object.clone(module): // copy the object
+							module; // return the primitive
+	if(typeof get === 'function'){
+		return get(res);
 	}
-	function changeSetter(fn){
-		if(typeof fn === 'function'){
-			set = function(value){
-				var res = fn(value);
-				defaultset(res);
-			};
-		}
+	return res;
+}
+/**
+ * Function: changeSetter
+ * 
+ * @class load
+ * @param {Function} fn
+ */
+function changeSetter(fn){
+	if(typeof fn === 'function'){
+		set = function(value){
+			var res = fn(value);
+			defaultset(res);
+		};
 	}
+}
+/**
+ * Function: changeGetter
+ * 
+ * @class load
+ * @param {Function} fn
+ */
 	function changeGetter(fn){
 		if(typeof fn === 'function'){
-			get = function(value){
-				var res;
-				if(value === undefined){
-					return fn(res);
-				}
-				return value;
-			};
+			get = fn;
 		}
 	}
 	set = defaultset;
