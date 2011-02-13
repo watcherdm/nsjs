@@ -20,9 +20,18 @@ task('default',['build', 'docs'],function(){
 	sys.puts('NSJS BUILD SYSTEM');
 });
 /**
+ * tests
+ */
+task('test', [], function(){
+	var ns = require('./src/nsjs');
+	var tests = require('./tests/test');
+	tests.runTests(ns);
+	complete();
+}, true);
+/**
  * build
  */
-task('build', ['clean'], function(){
+task('build', ['test','clean'], function(){
 	sys.puts('linting');
 	exec('jslint src/nsjs.js', function(error, stdout, stderr){
 		sys.puts('lint results: ' + stdout);

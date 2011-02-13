@@ -12,7 +12,7 @@
  */
 function Namespace(name, parent){
 	this.__name = name;
-	this.__parent = parent || global;
+	this.__parent = parent || exports;
 	this.__type = 'Namespace';
 	return this;
 }
@@ -29,7 +29,7 @@ function Namespace(name, parent){
 function Module(name, parent, type, module){
 	this.__name = name;
 	this.__type = type;
-	this.__parent = parent;
+	this.__parent = parent || exports;
 	this.ns = ns;
 	this.load = load;
 	return this;
@@ -42,21 +42,28 @@ function Module(name, parent, type, module){
 function ns(name, last){
 	var space,
 		_super = this,
-		i = 0;
-	if(this[name] !== undefined){
-		throw new Error('Namespace already defined.');
-	}
+		i = 0,
+		errors = [];
 	name = (name.indexOf('.') > -1)?name.split('.'):[name];
 	for(;space = name[i++];){
+		if(_super[space] !== undefined){
+			var err = new Error(space + ' namespace already defined.');
+			errors.push(err);
+			_super = _super[space];
+			continue;
+		}
 		_super[space] = new Namespace(space, _super);
 		_super = _super[space];
+	}
+	if(errors.length > 0){
+		throw errors;
 	}
 	if(last){
 		this.ns = function(){
 			throw new Error('Namespace method already finalized. No more namespaces can be loaded in this namespace');
 		};
 	}
-	return this[name];
+	return _super;
 }
 /**
  * @function load

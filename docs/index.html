@@ -130,7 +130,7 @@ code .this { color: #19469D; }</style>
 <td class="code">
 <pre><code><span class="keyword">function</span> <span class="class">Namespace</span>(<span class="variable">name</span>, <span class="variable">parent</span>){
 	<span class="this">this</span>.<span class="variable">__name</span> = <span class="variable">name</span>;
-	<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span> || <span class="variable">global</span>;
+	<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span> || <span class="variable">exports</span>;
 	<span class="this">this</span>.<span class="variable">__type</span> = <span class="string">'Namespace'</span>;
 	<span class="keyword">return</span> <span class="this">this</span>;
 }</code></pre>
@@ -148,7 +148,7 @@ code .this { color: #19469D; }</style>
 <pre><code><span class="keyword">function</span> <span class="class">Module</span>(<span class="variable">name</span>, <span class="variable">parent</span>, <span class="variable">type</span>, <span class="variable">module</span>){
 	<span class="this">this</span>.<span class="variable">__name</span> = <span class="variable">name</span>;
 	<span class="this">this</span>.<span class="variable">__type</span> = <span class="variable">type</span>;
-	<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span>;
+	<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span> || <span class="variable">exports</span>;
 	<span class="this">this</span>.<span class="variable">ns</span> = <span class="variable">ns</span>;
 	<span class="this">this</span>.<span class="variable">load</span> = <span class="variable">load</span>;
 	<span class="keyword">return</span> <span class="this">this</span>;
@@ -165,21 +165,28 @@ code .this { color: #19469D; }</style>
 <pre><code><span class="keyword">function</span> <span class="variable">ns</span>(<span class="variable">name</span>, <span class="variable">last</span>){
 	<span class="keyword">var</span> <span class="variable">space</span>,
 		<span class="variable">_super</span> = <span class="this">this</span>,
-		<span class="variable">i</span> = <span class="number integer">0</span>;
-	<span class="keyword">if</span>(<span class="this">this</span>[<span class="variable">name</span>] !== <span class="variable">undefined</span>){
-		<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Namespace already defined.'</span>);
-	}
+		<span class="variable">i</span> = <span class="number integer">0</span>,
+		<span class="variable">errors</span> = [];
 	<span class="variable">name</span> = (<span class="variable">name</span>.<span class="variable">indexOf</span>(<span class="string">'.'</span>) &<span class="variable">gt</span>; -<span class="number integer">1</span>)?<span class="variable">name</span>.<span class="variable">split</span>(<span class="string">'.'</span>):[<span class="variable">name</span>];
 	<span class="keyword">for</span>(;<span class="variable">space</span> = <span class="variable">name</span>[<span class="variable">i</span>++];){
+		<span class="keyword">if</span>(<span class="variable">_super</span>[<span class="variable">space</span>] !== <span class="variable">undefined</span>){
+			<span class="keyword">var</span> <span class="variable">err</span> = <span class="keyword">new</span> <span class="class">Error</span>(<span class="variable">space</span> + <span class="string">' namespace already defined.'</span>);
+			<span class="variable">errors</span>.<span class="variable">push</span>(<span class="variable">err</span>);
+			<span class="variable">_super</span> = <span class="variable">_super</span>[<span class="variable">space</span>];
+			<span class="keyword">continue</span>;
+		}
 		<span class="variable">_super</span>[<span class="variable">space</span>] = <span class="keyword">new</span> <span class="class">Namespace</span>(<span class="variable">space</span>, <span class="variable">_super</span>);
 		<span class="variable">_super</span> = <span class="variable">_super</span>[<span class="variable">space</span>];
+	}
+	<span class="keyword">if</span>(<span class="variable">errors</span>.<span class="variable">length</span> &<span class="variable">gt</span>; <span class="number integer">0</span>){
+		<span class="keyword">throw</span> <span class="variable">errors</span>;
 	}
 	<span class="keyword">if</span>(<span class="variable">last</span>){
 		<span class="this">this</span>.<span class="variable">ns</span> = <span class="keyword">function</span>(){
 			<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Namespace method already finalized. No more namespaces can be loaded in this namespace'</span>);
 		};
 	}
-	<span class="keyword">return</span> <span class="this">this</span>[<span class="variable">name</span>];
+	<span class="keyword">return</span> <span class="variable">_super</span>;
 }</code></pre>
 </td>
 </tr>
