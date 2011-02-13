@@ -32,14 +32,14 @@ function Module(name, parent, type, module){
 	this.__parent = parent || exports;
 	this.ns = ns;
 	this.load = load;
+	this.lock = lock;
 	return this;
 }
 /**
  * @function ns
  * @param name {String}
- * @param last {Boolean}
  */
-function ns(name, last){
+function ns(name){
 	var space,
 		_super = this,
 		i = 0,
@@ -58,11 +58,6 @@ function ns(name, last){
 	if(errors.length > 0){
 		throw errors;
 	}
-	if(last){
-		this.ns = function(){
-			throw new Error('Namespace method already finalized. No more namespaces can be loaded in this namespace');
-		};
-	}
 	return _super;
 }
 /**
@@ -80,23 +75,74 @@ function ns(name, last){
  * @param module
  * @param last {Boolean}
  */
-function load(name, module, last){
-	var type = detectType(module);
+function load(name, module, immutable){
+	var type = detectType(module),
+		get,
+		set,
+		context;
 	if(this[name] !== undefined){
 		throw new Error('Module already defined.');
 	}
+	function defaultset(value){
+		module = value;
+	}
+	function defaultget(){
+		var slice = Array.prototype.slice,
+			res;
+		if(!immutable){
+			if(arguments.length === 1){
+				set(arguments[0]);
+			}			
+		}
+		res = (typeof module === 'object')?
+				(module instanceof Array)?
+						slice.call(module, 0): // copy the array
+							Object.clone(module): // copy the object
+								module; // return the primitive
+		if(typeof get === 'function'){
+			return get(res);
+		}
+		return res;
+	}
+	function changeSetter(fn){
+		if(typeof fn === 'function'){
+			set = function(value){
+				var res = fn(value);
+				defaultset(res);
+			};
+		}
+	}
+	function changeGetter(fn){
+		if(typeof fn === 'function'){
+			get = function(value){
+				var res;
+				if(value === undefined){
+					return fn(res);
+				}
+				return value;
+			};
+		}
+	}
+	set = defaultset;
+	defaultget.changeGetter = changeGetter;
+	defaultget.changeSetter = changeSetter;
+
 	if(type === 'Property'){
-		this[name] = module;
+		this[name] = defaultget;
 	}else{
 		Module.prototype = Object.create(module);
-		this[name] = (typeof module !== 'function')?new Module(name, this, type, module):Module.call(module, name, this, type, module);			
+		this[name] = (typeof module !== 'function')?new Module(name, this, type, module):Module.call(module, name, this, type, module);
 	}
-	if(last){
-		this.load = function(){
-			throw new Error('Load method already finalized. No more modules can be loaded in this namespace');
-		};
-	}
+	context = this[name];
 	return this[name];
+}
+/**
+ * @function lock
+ */
+function lock(){
+	this.ns = function(){};
+	this.load = function(){};
+	this.lock = function(){};
 }
 /**
  * @function detectType
@@ -130,7 +176,7 @@ function detectType(module){
 	}
 	return type;
 }
-Namespace.prototype = {ns : ns, load : load};
+Namespace.prototype = {ns : ns, load : load, lock : lock};
 Namespace.prototype.constructor = Namespace;
 /**
  * global accessors
@@ -139,5 +185,5 @@ exports.Namespace = Namespace;
 exports.Module = Module;
 exports.ns = ns;
 exports.load = load;
-
+exports.lock = lock;
 })((typeof exports !== undefined)? this:exports);

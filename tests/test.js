@@ -7,7 +7,6 @@ var assert = require('assert'),
 function setup(nsjs){
 	nsjs.ns('test');
 	nsjs.ns('a.b.c.d');
-	nsjs.ns('last', true);
 	nsjs.load('e', {a : true});
 	nsjs.load('f', function(x){return x * x;});
 	nsjs.load('g', 1);
@@ -24,15 +23,15 @@ function runTests(context){
 		}catch(e){
 			var j = 0,
 				err;
-			if(e.name === 'AssertionError'){
-				console.error(test.name + ': Failed :: ' + e.name + ' ' + e.message);
-				return;
-			}
 			if(e instanceof Array){
 				for(;err = e[j++];){
 					console.error(test.name + ': Error :: ' + err.name + ' ' + err.message);
 				}
-				return;
+				continue;
+			}
+			if(e.name === 'AssertionError'){
+				console.error(test.name + ': Failed :: ' + e.name + ' ' + e.message);
+				continue;
 			}
 			console.error(test.name + ': Error :: ' + e.name + ' ' + e.message);
 		}
@@ -47,7 +46,17 @@ function testNamespaceCreate(ns){
 }
 addTest(testNamespaceCreate);
 function testNamespaceDuplicationError(ns){
-	assert.throws(function(){ns.ns('test');},Error, 'did not throw Namespace exists error.');
+	try{
+		ns.ns('test');
+	}catch(e){
+		if(e instanceof Array){
+			var i = 0,
+				err;
+			for(;err = e[i++];){
+				assert.throws(function(){throw err;}, Error, 'did not throw Namespace exists error.');
+			}
+		}
+	}
 }
 addTest(testNamespaceDuplicationError);
 function testNamespaceType(ns){	
@@ -59,7 +68,17 @@ function testNamespaceDeep(ns){
 }
 addTest(testNamespaceDeep);
 function testNamespaceDeepDuplicationError(ns){
-	assert.throws(function(){ns.a.ns('b.c');}, Error, 'did not throw Namespace exists error.');
+	try{
+		ns.a.ns('b.c');
+	}catch(e){
+		if(e instanceof Array){
+			var i = 0,
+				err;
+			for(;err = e[i++];){
+				assert.throws(function(){throw err;}, Error, 'did not throw Namespace exists error.');
+			}
+		}
+	}
 }
 addTest(testNamespaceDeepDuplicationError);
 function testModuleLoaded(ns){
@@ -72,12 +91,12 @@ function testMethodLoaded(ns){
 addTest(testMethodLoaded);
 function testNumberPropertyLoaded(ns){
 	assert.ok(ns.hasOwnProperty('g'), 'The g property was not loaded!');
-	assert.strictEqual(typeof ns.g, 'number', 'Value of ns.g was not numeric');
+	assert.strictEqual(typeof ns.g(), 'number', 'Value of ns.g was not numeric');
 }
 addTest(testNumberPropertyLoaded);
 function testStringPropertyLoaded(ns){
 	assert.ok(ns.hasOwnProperty('h'), 'The h property was not loaded!');
-	assert.strictEqual(typeof ns.h, 'string', 'Value of ns.h was not a string');
+	assert.strictEqual(typeof ns.h(), 'string', 'Value of ns.h was not a string');
 }
 addTest(testStringPropertyLoaded);
 function tearDown(nsjs){
