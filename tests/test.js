@@ -4,6 +4,13 @@
  * @param exports
  */
 (function(exports){
+function repeat(c, n){
+	var res = '';
+	while(n--){
+		res += c;
+	}
+	return res;
+}
 var assert = require('assert'),
 	tests = [];
 /**
@@ -20,6 +27,9 @@ function setup(nsjs){
 	nsjs.load('number', 1); // numeric property
 	nsjs.load('string', 'Hello World'); // string property
 	nsjs.load('boolean', true); // boolean property
+	nsjs.ns('math'); // begin a math namespace for testing some ideas
+	nsjs.math.load('add', function(x, y){ return x + y;});
+	nsjs.math.load('mul', function(x, y){ var prod = 0; while(y--){prod = this.add(prod, x);} return prod;});
 }
 /**
  * Function: runTests
@@ -33,21 +43,21 @@ function runTests(context){
 	for(; test = tests[i++];){
 		try{
 			test.fn(context);
-			console.log(test.name + ': Passed');
+			console.log(test.name + repeat(' ', (50 - test.name.length)) + ': Passed');
 		}catch(e){
 			var j = 0,
 				err;
 			if(e instanceof Array){
 				for(;err = e[j++];){
-					console.error(test.name + ': Error :: ' + err.name + ' ' + err.message);
+					console.error(test.name + repeat(' ', (50 - test.name.length)) + ': Error :: ' + err.name + ' ' + err.message);
 				}
 				continue;
 			}
 			if(e.name === 'AssertionError'){
-				console.error(test.name + ': Failed :: ' + e.name + ' ' + e.message);
+				console.error(test.name + repeat(' ', (50 - test.name.length)) + ': Failed :: ' + e.name + ' ' + e.message);
 				continue;
 			}
-			console.error(test.name + ': Error :: ' + e.name + ' ' + e.message);
+			console.error(test.name + repeat(' ', (50 - test.name.length)) +  ': Error :: ' + e.name + ' ' + e.message);
 		}
 	}
 	tearDown(context);
@@ -79,9 +89,10 @@ function testNamespaceDuplicationError(ns){
 	}catch(e){
 		if(e instanceof Array){
 			var i = 0,
-				err;
+				err,
+				fn = function(err_i){return function(){throw err_i;};};
 			for(;err = e[i++];){
-				assert.throws(function(){throw err;}, Error, 'did not throw Namespace exists error.');
+				assert.throws(fn(err), Error, 'did not throw Namespace exists error.');
 			}
 		}
 	}
@@ -110,9 +121,10 @@ function testNamespaceDeepDuplicationError(ns){
 	}catch(e){
 		if(e instanceof Array){
 			var i = 0,
-				err;
+				err,
+				fn = function(err_i){return function(){throw err_i;};};
 			for(;err = e[i++];){
-				assert.throws(function(){throw err;}, Error, 'did not throw Namespace exists error.');
+				assert.throws(fn(err), Error, 'did not throw Namespace exists error.');
 			}
 		}
 	}
@@ -160,13 +172,27 @@ function testBooleanPropertyLoaded(ns){
 }
 addTest(testBooleanPropertyLoaded);
 /**
- * Function: testModifySetter
- * 
- * XXX not implemented
+ * Function: testChangeSetter 
  */
-function testModifySetter(ns){
-	
+function testChangeSetter(ns){
+	ns.number.changeSetter(function(x){
+		return parseFloat(x).toFixed(2);
+	});
+	ns.number(10);
+	assert.strictEqual(ns.number(), '10.00', 'Setter did not appropriately affect the internal value.');
 }
+addTest(testChangeSetter);
+/**
+ * Function: testChangeGetter
+ */
+function testChangeGetter(ns){
+	ns.string.changeGetter(function(x){
+		return (x.toLowerCase().replace(/\s/g, '') === x.toLowerCase().replace(/\s/g, '').split('').reverse().join(''))?x + ' is a palindrome': x + ' is not a palindrome';
+	});
+	ns.string('Was it a rat I saw');
+	assert.ok(ns.string().indexOf('palindrome') > -1, 'The getter did not change the result.');
+}
+addTest(testChangeGetter);
 /**
  * Function: testConstructor
  */
@@ -178,6 +204,38 @@ function testConstructor(ns){
 	assert.strictEqual(ns.Constructor.__type, 'Constructor', '__type property was not set properly.');
 }
 addTest(testConstructor);
+/**
+ * Function: testRequire
+ */
+function testRequire(ns){
+	var add = ns.require('math.add');
+	assert.ok(typeof add === 'function', 'Returned something that was not the function I require.');
+}
+addTest(testRequire);
+/**
+ * Function: testRequireRetain
+ */
+function testRequireRetain(ns){
+	var mul = ns.require('math.mul', true);
+	assert.ok(typeof mul === 'function', 'Returned something that was not the function I require.');
+	assert.strictEqual(mul(9, 9), 81, 'Something went wrong with the multiplication function. Got result :: ' + mul(9, 9));
+}
+addTest(testRequireRetain);
+/**
+ * Function: testExtendModule
+ */
+function testExtendModule(ns){
+	ns.singleton.load('n', 10);
+	ns.singleton.load('s', 'Hello');
+	ns.singleton.ns('test');
+	ns.singleton.load('fn', function(){return this.__name;});
+	assert.ok(ns.singleton.n.__type === 'Property', 'Invalid type on module property.');
+	assert.ok(ns.singleton.s() === 'Hello', 'Invalid value on module property');
+	assert.ok(ns.singleton.test.__type === 'Namespace', 'Namespace test not loaded onto module.');
+	assert.ok(ns.singleton.fn.__type === 'Method', 'Method not loaded onto module.');
+	assert.ok(ns.singleton.fn() === 'singleton', 'Context was not retained in loaded method.');
+}
+addTest(testExtendModule);
 /**
  * Function: tearDown
  */

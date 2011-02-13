@@ -129,6 +129,9 @@ code .this { color: #19469D; }</style>
 </td>
 <td class="code">
 <pre><code><span class="keyword">function</span> <span class="class">Namespace</span>(<span class="variable">name</span>, <span class="variable">parent</span>){
+	<span class="keyword">if</span>(!<span class="regexp">/^[a-z0-9_.]+/</span>.<span class="variable">test</span>(<span class="variable">name</span>)){
+		<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Invalid name provided.'</span> + <span class="variable">name</span>);
+	}
 	<span class="this">this</span>.<span class="variable">__name</span> = <span class="variable">name</span>;
 	<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span> || <span class="variable">exports</span>;
 	<span class="this">this</span>.<span class="variable">__type</span> = <span class="string">'Namespace'</span>;
@@ -146,6 +149,9 @@ code .this { color: #19469D; }</style>
 </td>
 <td class="code">
 <pre><code><span class="keyword">function</span> <span class="class">Module</span>(<span class="variable">name</span>, <span class="variable">parent</span>, <span class="variable">type</span>, <span class="variable">module</span>){
+	<span class="keyword">if</span>(!<span class="regexp">/^[A-Za-z0-9_.]+/</span>.<span class="variable">test</span>(<span class="variable">name</span>)){
+		<span class="keyword">throw</span> <span class="keyword">new</span> <span class="class">Error</span>(<span class="string">'Invalid name provided.'</span> + <span class="variable">name</span>);
+	}
 	<span class="this">this</span>.<span class="variable">__name</span> = <span class="variable">name</span>;
 	<span class="this">this</span>.<span class="variable">__type</span> = <span class="variable">type</span>;
 	<span class="this">this</span>.<span class="variable">__parent</span> = <span class="variable">parent</span> || <span class="variable">exports</span>;
@@ -286,16 +292,25 @@ watch out for chaining this as the context will become lost if you call this ins
 </td>
 <td class="code">
 <pre><code><span class="keyword">function</span> <span class="variable">changeGetter</span>(<span class="variable">fn</span>){
-		<span class="keyword">if</span>(<span class="keyword">typeof</span> <span class="variable">fn</span> === <span class="string">'function'</span>){
-			<span class="variable">get</span> = <span class="variable">fn</span>;
-		}
+	<span class="keyword">if</span>(<span class="keyword">typeof</span> <span class="variable">fn</span> === <span class="string">'function'</span>){
+		<span class="variable">get</span> = <span class="variable">fn</span>;
 	}
-	<span class="variable">set</span> = <span class="variable">defaultset</span>;
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<p>finish the load declaration
+ </p>
+</td>
+<td class="code">
+<pre><code><span class="variable">set</span> = <span class="variable">defaultset</span>;
 	<span class="variable">defaultget</span>.<span class="variable">changeGetter</span> = <span class="variable">changeGetter</span>;
 	<span class="variable">defaultget</span>.<span class="variable">changeSetter</span> = <span class="variable">changeSetter</span>;
 
 	<span class="keyword">if</span>(<span class="variable">type</span> === <span class="string">'Property'</span>){
-		<span class="this">this</span>[<span class="variable">name</span>] = <span class="variable">defaultget</span>;
+		<span class="class">Module</span>.<span class="variable">prototype</span> = <span class="class">Object</span>.<span class="variable">create</span>(<span class="variable">defaultget</span>);
+		<span class="this">this</span>[<span class="variable">name</span>] = <span class="class">Module</span>.<span class="variable">call</span>(<span class="variable">defaultget</span>, <span class="variable">name</span>, <span class="this">this</span>, <span class="variable">type</span>, <span class="variable">defaultget</span>);
 	}<span class="keyword">else</span>{
 		<span class="class">Module</span>.<span class="variable">prototype</span> = <span class="class">Object</span>.<span class="variable">create</span>(<span class="variable">module</span>);
 		<span class="this">this</span>[<span class="variable">name</span>] = (<span class="keyword">typeof</span> <span class="variable">module</span> !== <span class="string">'function'</span>)?<span class="keyword">new</span> <span class="class">Module</span>(<span class="variable">name</span>, <span class="this">this</span>, <span class="variable">type</span>, <span class="variable">module</span>):<span class="class">Module</span>.<span class="variable">call</span>(<span class="variable">module</span>, <span class="variable">name</span>, <span class="this">this</span>, <span class="variable">type</span>, <span class="variable">module</span>);
@@ -356,6 +371,41 @@ watch out for chaining this as the context will become lost if you call this ins
 </tr>
 <tr class="code">
 <td class="docs">
+<h2>Function require</h2>
+
+<p>returns a module by namespace. This should work in browser and node.
+ </p>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">require</span>(<span class="variable">module</span>, <span class="variable">retain</span>){
+	<span class="keyword">var</span> <span class="variable">path</span> = (<span class="variable">module</span>.<span class="variable">indexOf</span>(<span class="string">'.'</span>) &<span class="variable">gt</span>; -<span class="number integer">1</span>)?<span class="variable">module</span>.<span class="variable">split</span>(<span class="string">'.'</span>):[<span class="variable">module</span>],
+		<span class="variable">i</span> = <span class="number integer">0</span>, <span class="variable">node</span>, <span class="variable">node_chain</span> = <span class="variable">exports</span>;
+	<span class="keyword">for</span>(;<span class="variable">node</span> = <span class="variable">path</span>[<span class="variable">i</span>++];){
+		<span class="keyword">if</span>(<span class="variable">i</span> === <span class="variable">path</span>.<span class="variable">length</span>){
+			<span class="keyword">if</span>(<span class="variable">node_chain</span>[<span class="variable">node</span>].<span class="variable">__type</span> === <span class="string">'Method'</span> &<span class="variable">amp</span>;&<span class="variable">amp</span>; <span class="variable">retain</span>){
+				<span class="keyword">return</span> <span class="variable">makeContextMethod</span>(<span class="variable">node_chain</span>[<span class="variable">node</span>], <span class="variable">node_chain</span>);
+			}	
+			<span class="keyword">return</span> <span class="variable">node_chain</span>[<span class="variable">node</span>];
+		}
+		<span class="variable">node_chain</span> = <span class="variable">node_chain</span>[<span class="variable">node</span>];
+	}
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function makeContextMethod</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">makeContextMethod</span>(<span class="variable">method</span>, <span class="variable">context</span>){
+	<span class="keyword">return</span> <span class="keyword">function</span>(){
+		<span class="keyword">return</span> <span class="variable">method</span>.<span class="variable">apply</span>(<span class="variable">context</span>, <span class="variable">arguments</span>);
+	};
+}</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
 <p>global accessors
  </p>
 </td>
@@ -365,6 +415,7 @@ watch out for chaining this as the context will become lost if you call this ins
 <span class="variable">exports</span>.<span class="variable">ns</span> = <span class="variable">ns</span>;
 <span class="variable">exports</span>.<span class="variable">load</span> = <span class="variable">load</span>;
 <span class="variable">exports</span>.<span class="variable">lock</span> = <span class="variable">lock</span>;
+<span class="variable">exports</span>.<span class="variable">require</span> = <span class="variable">require</span>;
 })((<span class="keyword">typeof</span> <span class="variable">exports</span> !== <span class="variable">undefined</span>)? <span class="this">this</span>:<span class="variable">exports</span>);</code></pre>
 </td>
 </tr><tr class="filename"><td><h2 id="tests/test.js"><a href="#">test</a></h2></td><td>tests/test.js</td></tr><tr class="code">
@@ -375,6 +426,13 @@ watch out for chaining this as the context will become lost if you call this ins
 </td>
 <td class="code">
 <pre><code>(<span class="keyword">function</span>(<span class="variable">exports</span>){
+<span class="keyword">function</span> <span class="variable">repeat</span>(<span class="variable">c</span>, <span class="variable">n</span>){
+	<span class="keyword">var</span> <span class="variable">res</span> = <span class="string">''</span>;
+	<span class="keyword">while</span>(<span class="variable">n</span>--){
+		<span class="variable">res</span> += <span class="variable">c</span>;
+	}
+	<span class="keyword">return</span> <span class="variable">res</span>;
+}
 <span class="keyword">var</span> <span class="variable">assert</span> = <span class="variable">require</span>(<span class="string">'assert'</span>),
 	<span class="variable">tests</span> = [];</code></pre>
 </td>
@@ -395,6 +453,9 @@ watch out for chaining this as the context will become lost if you call this ins
 	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'number'</span>, <span class="number integer">1</span>); <span class="comment">// numeric property</span>
 	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'string'</span>, <span class="string">'Hello World'</span>); <span class="comment">// string property</span>
 	<span class="variable">nsjs</span>.<span class="variable">load</span>(<span class="string">'boolean'</span>, <span class="variable">true</span>); <span class="comment">// boolean property</span>
+	<span class="variable">nsjs</span>.<span class="variable">ns</span>(<span class="string">'math'</span>); <span class="comment">// begin a math namespace for testing some ideas</span>
+	<span class="variable">nsjs</span>.<span class="variable">math</span>.<span class="variable">load</span>(<span class="string">'add'</span>, <span class="keyword">function</span>(<span class="variable">x</span>, <span class="variable">y</span>){ <span class="keyword">return</span> <span class="variable">x</span> + <span class="variable">y</span>;});
+	<span class="variable">nsjs</span>.<span class="variable">math</span>.<span class="variable">load</span>(<span class="string">'mul'</span>, <span class="keyword">function</span>(<span class="variable">x</span>, <span class="variable">y</span>){ <span class="keyword">var</span> <span class="variable">prod</span> = <span class="number integer">0</span>; <span class="keyword">while</span>(<span class="variable">y</span>--){<span class="variable">prod</span> = <span class="this">this</span>.<span class="variable">add</span>(<span class="variable">prod</span>, <span class="variable">x</span>);} <span class="keyword">return</span> <span class="variable">prod</span>;});
 }</code></pre>
 </td>
 </tr>
@@ -412,21 +473,21 @@ watch out for chaining this as the context will become lost if you call this ins
 	<span class="keyword">for</span>(; <span class="variable">test</span> = <span class="variable">tests</span>[<span class="variable">i</span>++];){
 		<span class="keyword">try</span>{
 			<span class="variable">test</span>.<span class="variable">fn</span>(<span class="variable">context</span>);
-			<span class="variable">console</span>.<span class="variable">log</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Passed'</span>);
+			<span class="variable">console</span>.<span class="variable">log</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="variable">repeat</span>(<span class="string">' '</span>, (<span class="number integer">50</span> - <span class="variable">test</span>.<span class="variable">name</span>.<span class="variable">length</span>)) + <span class="string">': Passed'</span>);
 		}<span class="keyword">catch</span>(<span class="variable">e</span>){
 			<span class="keyword">var</span> <span class="variable">j</span> = <span class="number integer">0</span>,
 				<span class="variable">err</span>;
 			<span class="keyword">if</span>(<span class="variable">e</span> <span class="variable">instanceof</span> <span class="class">Array</span>){
 				<span class="keyword">for</span>(;<span class="variable">err</span> = <span class="variable">e</span>[<span class="variable">j</span>++];){
-					<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Error :: '</span> + <span class="variable">err</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">err</span>.<span class="variable">message</span>);
+					<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="variable">repeat</span>(<span class="string">' '</span>, (<span class="number integer">50</span> - <span class="variable">test</span>.<span class="variable">name</span>.<span class="variable">length</span>)) + <span class="string">': Error :: '</span> + <span class="variable">err</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">err</span>.<span class="variable">message</span>);
 				}
 				<span class="keyword">continue</span>;
 			}
 			<span class="keyword">if</span>(<span class="variable">e</span>.<span class="variable">name</span> === <span class="string">'AssertionError'</span>){
-				<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Failed :: '</span> + <span class="variable">e</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">e</span>.<span class="variable">message</span>);
+				<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="variable">repeat</span>(<span class="string">' '</span>, (<span class="number integer">50</span> - <span class="variable">test</span>.<span class="variable">name</span>.<span class="variable">length</span>)) + <span class="string">': Failed :: '</span> + <span class="variable">e</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">e</span>.<span class="variable">message</span>);
 				<span class="keyword">continue</span>;
 			}
-			<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="string">': Error :: '</span> + <span class="variable">e</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">e</span>.<span class="variable">message</span>);
+			<span class="variable">console</span>.<span class="variable">error</span>(<span class="variable">test</span>.<span class="variable">name</span> + <span class="variable">repeat</span>(<span class="string">' '</span>, (<span class="number integer">50</span> - <span class="variable">test</span>.<span class="variable">name</span>.<span class="variable">length</span>)) +  <span class="string">': Error :: '</span> + <span class="variable">e</span>.<span class="variable">name</span> + <span class="string">' '</span> + <span class="variable">e</span>.<span class="variable">message</span>);
 		}
 	}
 	<span class="variable">tearDown</span>(<span class="variable">context</span>);
@@ -470,9 +531,10 @@ watch out for chaining this as the context will become lost if you call this ins
 	}<span class="keyword">catch</span>(<span class="variable">e</span>){
 		<span class="keyword">if</span>(<span class="variable">e</span> <span class="variable">instanceof</span> <span class="class">Array</span>){
 			<span class="keyword">var</span> <span class="variable">i</span> = <span class="number integer">0</span>,
-				<span class="variable">err</span>;
+				<span class="variable">err</span>,
+				<span class="variable">fn</span> = <span class="keyword">function</span>(<span class="variable">err_i</span>){<span class="keyword">return</span> <span class="keyword">function</span>(){<span class="keyword">throw</span> <span class="variable">err_i</span>;};};
 			<span class="keyword">for</span>(;<span class="variable">err</span> = <span class="variable">e</span>[<span class="variable">i</span>++];){
-				<span class="variable">assert</span>.<span class="variable">throws</span>(<span class="keyword">function</span>(){<span class="keyword">throw</span> <span class="variable">err</span>;}, <span class="class">Error</span>, <span class="string">'did not throw Namespace exists error.'</span>);
+				<span class="variable">assert</span>.<span class="variable">throws</span>(<span class="variable">fn</span>(<span class="variable">err</span>), <span class="class">Error</span>, <span class="string">'did not throw Namespace exists error.'</span>);
 			}
 		}
 	}
@@ -513,9 +575,10 @@ watch out for chaining this as the context will become lost if you call this ins
 	}<span class="keyword">catch</span>(<span class="variable">e</span>){
 		<span class="keyword">if</span>(<span class="variable">e</span> <span class="variable">instanceof</span> <span class="class">Array</span>){
 			<span class="keyword">var</span> <span class="variable">i</span> = <span class="number integer">0</span>,
-				<span class="variable">err</span>;
+				<span class="variable">err</span>,
+				<span class="variable">fn</span> = <span class="keyword">function</span>(<span class="variable">err_i</span>){<span class="keyword">return</span> <span class="keyword">function</span>(){<span class="keyword">throw</span> <span class="variable">err_i</span>;};};
 			<span class="keyword">for</span>(;<span class="variable">err</span> = <span class="variable">e</span>[<span class="variable">i</span>++];){
-				<span class="variable">assert</span>.<span class="variable">throws</span>(<span class="keyword">function</span>(){<span class="keyword">throw</span> <span class="variable">err</span>;}, <span class="class">Error</span>, <span class="string">'did not throw Namespace exists error.'</span>);
+				<span class="variable">assert</span>.<span class="variable">throws</span>(<span class="variable">fn</span>(<span class="variable">err</span>), <span class="class">Error</span>, <span class="string">'did not throw Namespace exists error.'</span>);
 			}
 		}
 	}
@@ -586,15 +649,32 @@ watch out for chaining this as the context will become lost if you call this ins
 </tr>
 <tr class="code">
 <td class="docs">
-<h2>Function testModifySetter</h2>
-
-<p>XXX not implemented
- </p>
+<h2>Function testChangeSetter</h2>
 </td>
 <td class="code">
-<pre><code><span class="keyword">function</span> <span class="variable">testModifySetter</span>(<span class="variable">ns</span>){
-	
-}</code></pre>
+<pre><code><span class="keyword">function</span> <span class="variable">testChangeSetter</span>(<span class="variable">ns</span>){
+	<span class="variable">ns</span>.<span class="variable">number</span>.<span class="variable">changeSetter</span>(<span class="keyword">function</span>(<span class="variable">x</span>){
+		<span class="keyword">return</span> <span class="variable">parseFloat</span>(<span class="variable">x</span>).<span class="variable">toFixed</span>(<span class="number integer">2</span>);
+	});
+	<span class="variable">ns</span>.<span class="variable">number</span>(<span class="number integer">10</span>);
+	<span class="variable">assert</span>.<span class="variable">strictEqual</span>(<span class="variable">ns</span>.<span class="variable">number</span>(), <span class="string">'10.00'</span>, <span class="string">'Setter did not appropriately affect the internal value.'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testChangeSetter</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testChangeGetter</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testChangeGetter</span>(<span class="variable">ns</span>){
+	<span class="variable">ns</span>.<span class="variable">string</span>.<span class="variable">changeGetter</span>(<span class="keyword">function</span>(<span class="variable">x</span>){
+		<span class="keyword">return</span> (<span class="variable">x</span>.<span class="variable">toLowerCase</span>().<span class="variable">replace</span>(<span class="regexp">/\s/g</span>, <span class="string">''</span>) === <span class="variable">x</span>.<span class="variable">toLowerCase</span>().<span class="variable">replace</span>(<span class="regexp">/\s/g</span>, <span class="string">''</span>).<span class="variable">split</span>(<span class="string">''</span>).<span class="variable">reverse</span>().<span class="variable">join</span>(<span class="string">''</span>))?<span class="variable">x</span> + <span class="string">' is a palindrome'</span>: <span class="variable">x</span> + <span class="string">' is not a palindrome'</span>;
+	});
+	<span class="variable">ns</span>.<span class="variable">string</span>(<span class="string">'Was it a rat I saw'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">string</span>().<span class="variable">indexOf</span>(<span class="string">'palindrome'</span>) &<span class="variable">gt</span>; -<span class="number integer">1</span>, <span class="string">'The getter did not change the result.'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testChangeGetter</span>);</code></pre>
 </td>
 </tr>
 <tr class="code">
@@ -610,6 +690,50 @@ watch out for chaining this as the context will become lost if you call this ins
 	<span class="variable">assert</span>.<span class="variable">strictEqual</span>(<span class="variable">ns</span>.<span class="class">Constructor</span>.<span class="variable">__type</span>, <span class="string">'Constructor'</span>, <span class="string">'__type property was not set properly.'</span>);
 }
 <span class="variable">addTest</span>(<span class="variable">testConstructor</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testRequire</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testRequire</span>(<span class="variable">ns</span>){
+	<span class="keyword">var</span> <span class="variable">add</span> = <span class="variable">ns</span>.<span class="variable">require</span>(<span class="string">'math.add'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="keyword">typeof</span> <span class="variable">add</span> === <span class="string">'function'</span>, <span class="string">'Returned something that was not the function I require.'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testRequire</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testRequireRetain</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testRequireRetain</span>(<span class="variable">ns</span>){
+	<span class="keyword">var</span> <span class="variable">mul</span> = <span class="variable">ns</span>.<span class="variable">require</span>(<span class="string">'math.mul'</span>, <span class="variable">true</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="keyword">typeof</span> <span class="variable">mul</span> === <span class="string">'function'</span>, <span class="string">'Returned something that was not the function I require.'</span>);
+	<span class="variable">assert</span>.<span class="variable">strictEqual</span>(<span class="variable">mul</span>(<span class="number integer">9</span>, <span class="number integer">9</span>), <span class="number integer">81</span>, <span class="string">'Something went wrong with the multiplication function. Got result :: '</span> + <span class="variable">mul</span>(<span class="number integer">9</span>, <span class="number integer">9</span>));
+}
+<span class="variable">addTest</span>(<span class="variable">testRequireRetain</span>);</code></pre>
+</td>
+</tr>
+<tr class="code">
+<td class="docs">
+<h2>Function testExtendModule</h2>
+</td>
+<td class="code">
+<pre><code><span class="keyword">function</span> <span class="variable">testExtendModule</span>(<span class="variable">ns</span>){
+	<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">load</span>(<span class="string">'n'</span>, <span class="number integer">10</span>);
+	<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">load</span>(<span class="string">'s'</span>, <span class="string">'Hello'</span>);
+	<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">ns</span>(<span class="string">'test'</span>);
+	<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">load</span>(<span class="string">'fn'</span>, <span class="keyword">function</span>(){<span class="keyword">return</span> <span class="this">this</span>.<span class="variable">__name</span>;});
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">n</span>.<span class="variable">__type</span> === <span class="string">'Property'</span>, <span class="string">'Invalid type on module property.'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">s</span>() === <span class="string">'Hello'</span>, <span class="string">'Invalid value on module property'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">test</span>.<span class="variable">__type</span> === <span class="string">'Namespace'</span>, <span class="string">'Namespace test not loaded onto module.'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">fn</span>.<span class="variable">__type</span> === <span class="string">'Method'</span>, <span class="string">'Method not loaded onto module.'</span>);
+	<span class="variable">assert</span>.<span class="variable">ok</span>(<span class="variable">ns</span>.<span class="variable">singleton</span>.<span class="variable">fn</span>() === <span class="string">'singleton'</span>, <span class="string">'Context was not retained in loaded method.'</span>);
+}
+<span class="variable">addTest</span>(<span class="variable">testExtendModule</span>);</code></pre>
 </td>
 </tr>
 <tr class="code">

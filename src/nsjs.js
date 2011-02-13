@@ -11,6 +11,9 @@
  * @param {Namespace} parent
  */
 function Namespace(name, parent){
+	if(!/^[a-z0-9_.]+/.test(name)){
+		throw new Error('Invalid name provided.' + name);
+	}
 	this.__name = name;
 	this.__parent = parent || exports;
 	this.__type = 'Namespace';
@@ -27,6 +30,9 @@ function Namespace(name, parent){
  * @returns {Module} this
  */
 function Module(name, parent, type, module){
+	if(!/^[A-Za-z0-9_.]+/.test(name)){
+		throw new Error('Invalid name provided.' + name);
+	}
 	this.__name = name;
 	this.__type = type;
 	this.__parent = parent || exports;
@@ -136,17 +142,21 @@ function changeSetter(fn){
  * @class load
  * @param {Function} fn
  */
-	function changeGetter(fn){
-		if(typeof fn === 'function'){
-			get = fn;
-		}
+function changeGetter(fn){
+	if(typeof fn === 'function'){
+		get = fn;
 	}
+}
+/**
+ * finish the load declaration
+ */
 	set = defaultset;
 	defaultget.changeGetter = changeGetter;
 	defaultget.changeSetter = changeSetter;
 
 	if(type === 'Property'){
-		this[name] = defaultget;
+		Module.prototype = Object.create(defaultget);
+		this[name] = Module.call(defaultget, name, this, type, defaultget);
 	}else{
 		Module.prototype = Object.create(module);
 		this[name] = (typeof module !== 'function')?new Module(name, this, type, module):Module.call(module, name, this, type, module);
@@ -197,6 +207,32 @@ function detectType(module){
 Namespace.prototype = {ns : ns, load : load, lock : lock};
 Namespace.prototype.constructor = Namespace;
 /**
+ * Function: require
+ * 
+ * returns a module by namespace. This should work in browser and node.
+ */
+function require(module, retain){
+	var path = (module.indexOf('.') > -1)?module.split('.'):[module],
+		i = 0, node, node_chain = exports;
+	for(;node = path[i++];){
+		if(i === path.length){
+			if(node_chain[node].__type === 'Method' && retain){
+				return makeContextMethod(node_chain[node], node_chain);
+			}	
+			return node_chain[node];
+		}
+		node_chain = node_chain[node];
+	}
+}
+/**
+ * Function: makeContextMethod
+ */
+function makeContextMethod(method, context){
+	return function(){
+		return method.apply(context, arguments);
+	};
+}
+/**
  * global accessors
  */
 exports.Namespace = Namespace;
@@ -204,4 +240,5 @@ exports.Module = Module;
 exports.ns = ns;
 exports.load = load;
 exports.lock = lock;
+exports.require = require;
 })((typeof exports !== undefined)? this:exports);

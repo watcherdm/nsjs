@@ -1,6 +1,13 @@
 /**
  * Jakefile for nsjs. 
  */
+function repeat(c, n){
+	var r = '';
+	while(n--){
+		r += c;
+	}
+	return r;
+}
 /**
  * dependencies
  */
@@ -11,8 +18,8 @@ var sys = require('sys'),
  * project variables
  */
 	title = "NSJS Namespacing and Module Loading Library",
-	version = '0.1',
-	name = 'ICARUS';
+	version = '0.2',
+	name = 'Achilles';
 /**
  * default
  */
@@ -34,7 +41,16 @@ task('test', [], function(){
 task('build', ['test','clean'], function(){
 	sys.puts('linting');
 	exec('jslint src/nsjs.js', function(error, stdout, stderr){
-		sys.puts('lint results: ' + stdout);
+		var msg ='src lint results'; 
+		sys.puts(msg + repeat(' ', 50 - msg.length) + ': ' + stdout);
+	});
+	exec('jslint tests/test.js', function(error, stdout, stderr){
+		var msg = 'tests lint results';
+		sys.puts(msg + repeat(' ', 50 - msg.length) + ': ' + stdout);
+	});
+	exec('jslint Jakefile.js', function(error, stdout, stderr){
+		var msg = 'jake lint results';
+		sys.puts(msg + repeat(' ', 50 - msg.length) + ': ' + stdout);
 	});
 	exec('mkdir bin', function(){
 		exec('java -jar tools/compiler.jar --js src/nsjs.js --js_output_file bin/nsjs.min.js', function(){
