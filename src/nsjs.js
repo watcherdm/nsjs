@@ -241,4 +241,4 @@ exports.ns = ns;
 exports.load = load;
 exports.lock = lock;
 exports.require = require;
-})((typeof exports !== undefined)? this:exports);
+})((typeof exports === 'undefined')? this:exports);
