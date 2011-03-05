@@ -73,8 +73,8 @@ task('clean', [], function(){
 /**
  * docs
  */
-task('docs', [], function(){
+task('docs', ['clean'], function(){
 	sys.puts('writing docs');
 	exec('mkdir docs');
-	exec('dox --title "' + title + '" src/nsjs.js tests/test.js > docs/index.html');
+	exec('dox --title "' + title + '" src/nsjs.js > docs/index.html');
 });
