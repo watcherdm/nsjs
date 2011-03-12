@@ -416,7 +416,7 @@ watch out for chaining this as the context will become lost if you call this ins
 <span class="variable">exports</span>.<span class="variable">load</span> = <span class="variable">load</span>;
 <span class="variable">exports</span>.<span class="variable">lock</span> = <span class="variable">lock</span>;
 <span class="variable">exports</span>.<span class="variable">require</span> = <span class="variable">require</span>;
-})((<span class="keyword">typeof</span> <span class="variable">exports</span> !== <span class="variable">undefined</span>)? <span class="this">this</span>:<span class="variable">exports</span>);</code></pre>
+})((<span class="keyword">typeof</span> <span class="variable">exports</span> === <span class="string">'undefined'</span>)? <span class="this">this</span>:<span class="variable">exports</span>);</code></pre>
 </td>
 </tr><tr class="filename"><td><h2 id="tests/test.js"><a href="#">test</a></h2></td><td>tests/test.js</td></tr><tr class="code">
 <td class="docs">
