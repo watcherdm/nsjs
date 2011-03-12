@@ -73,8 +73,13 @@ task('clean', [], function(){
 /**
  * docs
  */
-task('docs', [], function(){
+task('docs', ['clean'], function(){
 	sys.puts('writing docs');
-	exec('mkdir docs');
-	exec('dox --title "' + title + '" src/nsjs.js tests/test.js > docs/index.html');
+	exec('mkdir docs', function(err){
+		if(err){ throw err;}
+		exec('dox --title "' + title + '" src/nsjs.js --ribbon http://github.com/webspinner/nsjs > docs/index.html', function(err){
+			if(err){throw err;}
+		});
+		
+	});
 });
