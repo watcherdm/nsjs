@@ -12,13 +12,13 @@ function repeat(c, n){
  * dependencies
  */
 var sys = require('sys'),
-	util = require('util'),
+	utils = require('util'),
 	exec = require('child_process').exec,
 /**
  * project variables
  */
 	title = "NSJS Namespacing and Module Loading Library",
-	version = '0.2',
+	version = '0.3',
 	name = 'Achilles';
 /**
  * default
@@ -77,7 +77,7 @@ task('docs', ['clean'], function(){
 	sys.puts('writing docs');
 	exec('mkdir docs', function(err){
 		if(err){ throw err;}
-		exec('dox --title "' + title + '" src/nsjs.js --ribbon http://github.com/webspinner/nsjs > docs/index.html', function(err){
+		exec('dox < src/nsjs.js > docs/nsjs.dox.json', function(err){
 			if(err){throw err;}
 		});
 		
