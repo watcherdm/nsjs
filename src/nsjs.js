@@ -210,5 +210,5 @@
 }((typeof define !== 'undefined')?define:(typeof exports !== 'undefined') ? function(deps, factory){
 	module.exports = factory();
 } : function(deps, factory){
-	this.ns = factory();
+	this.nsjs = factory();
 }));
